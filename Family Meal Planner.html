@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Meal Planner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#f2f6f4;--card:#fff;--ink:#17302b;--mute:#5d7570;--line:#d5e1dd;--acc:#0e6e63;--acc2:#f4b942;--bad:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1b19;--card:#172826;--ink:#e6f1ee;--mute:#93aca6;--line:#2a403c;--acc:#4fc4b4;--acc2:#f4b942;--bad:#ff8a80}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Bricolage Grotesque',system-ui,sans-serif}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--ink);color:var(--bg);z-index:5;display:flex;gap:4px;align-items:center;padding:8px 12px;flex-wrap:wrap}
+header b{font-size:20px;font-weight:800;margin-right:auto}
+nav button{background:none;border:0;color:inherit;padding:8px 12px;border-radius:8px;font:inherit;cursor:pointer;opacity:.75}
+nav button.on{background:var(--acc2);color:#17302b;opacity:1;font-weight:600}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:28px;font-weight:800;margin:8px 0 12px}h2{font-size:20px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+button.b,a.b{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer;display:inline-block}
+button.g{background:none;color:var(--acc);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}
+button.d{color:var(--bad)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc2);outline-offset:1px}
+label{display:block;font-weight:600;margin:10px 0 2px}
+input,select,textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input[type=checkbox]{width:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
+.mute{color:var(--mute);font-size:14px}.tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:13px;margin:2px 2px 0 0}
+.warn{background:#fff3cd;color:#5a4300;border-radius:8px;padding:10px;margin-bottom:10px}
+.days{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.day{border-top:5px solid var(--acc)}.day.lk{border-top-color:var(--acc2)}
+.chk{display:flex;gap:8px;align-items:flex-start;padding:4px 0}.chk.done span{text-decoration:line-through;color:var(--mute)}
+.chk input{margin-top:6px;width:20px;height:20px}
+.steps li{margin-bottom:10px;font-size:18px}
+.bar{height:8px;background:var(--acc);border-radius:4px}
+@media print{header,.noprint{display:none}body{background:#fff;color:#000}}
+</style></head><body>
+<header><b>🍽 Meal Planner</b><nav id="nav"></nav></header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s),uid=()=>Math.random().toString(36).slice(2,10);
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CAT=[['Meat & seafood',/chicken|beef|pork|lamb|mince|fish|salmon|prawn|bacon|sausage|tuna/],['Dairy & eggs',/milk|cheese|butter|cream|yogh?urt|egg/],['Produce',/onion|garlic|tomato|pepper|lettuce|carrot|potato|spinach|broccoli|lemon|lime|basil|coriander|mushroom|zucchini|capsicum|avocado|apple|banana|ginger|cucumber|herb/],['Bakery',/bread|tortilla|wrap|bun\b|roll/],['Frozen',/frozen|peas/]];
+const cat=n=>(CAT.find(c=>c[1].test(n))||['Pantry'])[0];
+const frac=s=>s.trim().split(/\s+/).reduce((a,p)=>a+(p.includes('/')?p.split('/')[0]/p.split('/')[1]:+p),0);
+function parseIng(t){const m=t.trim().match(/^([\d.\/]+(?:\s+\d+\/\d+)?)?\s*(?:(kg|g|ml|l|tsp|tbsp|cups?)\s+)?(.+)$/i);return{q:m[1]?frac(m[1]):0,u:(m[2]||'').toLowerCase().replace('cups','cup'),n:m[3].trim().toLowerCase()}}
+function mk(name,servings,prep,cook,tags,ing,steps){return{id:uid(),name,servings,prep,cook,tags,fav:false,sample:true,ingredients:ing.split(';').map(parseIng),steps:steps.split('|')}}
+function init(){return{recipes:[
+mk('Chicken Fried Rice',4,10,15,'quick,asian','300 g chicken breast;2 cup cooked rice;2 eggs;1 cup frozen peas;2 tbsp soy sauce;1 onion','Dice chicken and onion.|Fry chicken until cooked.|Add rice, peas and onion; stir-fry 5 min.|Push aside, scramble eggs, mix through with soy sauce.'),
+mk('Beef Tacos',4,15,15,'family favourite,mexican','400 g beef mince;8 tortillas;1 tomato;1 cup cheese;1 lettuce;2 tbsp taco seasoning','Brown mince with seasoning.|Chop tomato and lettuce.|Fill warm tortillas and top with cheese.'),
+mk('Veggie Pasta Bake',4,15,30,'vegetarian,italian','300 g pasta;400 g tomato passata;1 zucchini;1 capsicum;1 cup cheese;2 garlic','Boil pasta 8 min.|Fry veg and garlic, add passata.|Mix with pasta, top with cheese.|Bake 20 min at 180C.'),
+mk('Baked Salmon & Potatoes',4,10,30,'fish,healthy','4 salmon fillets;600 g potato;1 lemon;2 tbsp olive oil;200 g broccoli','Roast chopped potatoes 15 min at 200C.|Add salmon, lemon and oil; roast 12 min.|Steam broccoli and serve.'),
+mk('Chickpea Curry',4,10,25,'vegan,indian,budget','2 can chickpeas;400 ml coconut milk;1 onion;2 garlic;2 tbsp curry paste;200 g spinach;2 cup cooked rice','Fry onion and garlic.|Stir in curry paste, chickpeas and coconut milk; simmer 15 min.|Stir in spinach and serve on rice.'),
+mk('Sausage & Veg Traybake',4,10,35,'easy,family favourite','8 sausages;600 g potato;2 carrot;1 onion;2 tbsp olive oil','Chop veg and toss with oil on a tray.|Add sausages.|Roast 35 min at 200C, turning once.'),
+mk('Mushroom Omelette',2,5,10,'quick,vegetarian','4 eggs;150 g mushroom;30 g butter;0.5 cup cheese','Fry mushrooms in butter.|Whisk eggs, pour over.|Add cheese, fold and serve.')],
+settings:{people:4,allergies:'',dislikes:'',maxTime:60},plan:Array.from({length:7},()=>({rid:null,sv:4,lock:false})),hist:[],pantry:[],ticked:{},extra:[],warn:''}}
+let S;try{S=JSON.parse(localStorage.getItem('fmp'))}catch(e){}S=S||init();
+const save=()=>{try{localStorage.setItem('fmp',JSON.stringify(S))}catch(e){}};
+let V='plan',EDIT=null,COOK=null,FILTER='';let CONF=null;const ask=(m,f)=>{CONF={m,f};render()},notice=m=>{CONF={m,ok:1};render()};
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],R=id=>S.recipes.find(r=>r.id==id);
+const words=s=>s.toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);
+// ---------- planner logic (kept separate from UI) ----------
+function safe(r){const al=words(S.settings.allergies);if(!r.ingredients.length)return false;const txt=(r.name+' '+r.tags+' '+r.ingredients.map(i=>i.n).join(' ')).toLowerCase();return !al.some(a=>txt.includes(a))}
+function score(r,chosen){let s=r.fav?3:0,tot=r.prep+r.cook;if(tot>S.settings.maxTime)s-=5;
+const txt=r.ingredients.map(i=>i.n).join(' ');if(words(S.settings.dislikes).some(d=>txt.includes(d)))s-=6;
+const main=n=>n.ingredients[0]?.n.split(' ').pop();let sameMain=chosen.filter(c=>main(c)==main(r)).length;s-=sameMain*4;
+const tg=words(r.tags);chosen.forEach(c=>{if(words(c.tags).some(t=>tg.includes(t)&&!['quick','easy','budget','healthy'].includes(t)))s-=1.5});
+const have=new Set(chosen.flatMap(c=>c.ingredients.map(i=>i.n)));s+=Math.min(3,r.ingredients.filter(i=>have.has(i.n)).length*.75);
+if(S.hist.includes(r.id))s-=3;return s+Math.random()*1.5}
+function pick(i,chosen,usedIds){const c=S.recipes.filter(r=>safe(r)&&!usedIds.has(r.id)).map(r=>({r,s:score(r,chosen)})).sort((a,b)=>b.s-a.s);return c[0]?.r}
+function generate(only){const used=new Set(S.plan.filter(d=>d.rid).map(d=>d.rid)),idx=only!=null?[only]:S.plan.map((d,i)=>i).filter(i=>!S.plan[i].lock);
+if(only!=null)used.delete(S.plan[only].rid);else idx.forEach(i=>used.delete(S.plan[i].rid));
+let missing=0,chosen=S.plan.filter((d,i)=>d.rid&&!idx.includes(i)).map(d=>R(d.rid));
+idx.forEach(i=>{const r=pick(i,chosen,used);if(r){S.plan[i]={rid:r.id,sv:S.settings.people,lock:false};used.add(r.id);chosen.push(r)}else{S.plan[i]={rid:null,sv:S.settings.people,lock:false};missing++}});
+const ok=S.recipes.filter(safe).length,unsafe=S.recipes.length-ok;
+S.warn=missing?`Only ${ok} safe recipe(s) available. ${missing} day(s) left empty — add ${missing} more recipes with ingredients listed.`+(unsafe?` ${unsafe} recipe(s) were skipped (allergen match or no ingredients listed).`:''):'';
+S.hist=S.plan.filter(d=>d.rid).map(d=>d.rid);save();render()}
+function scaleQ(i,r,sv){return i.q*sv/r.servings}
+function fmt(q,u){if(!q)return'';if(u=='g'&&q>=1000){q/=1000;u='kg'}if(u=='ml'&&q>=1000){q/=1000;u='l'}return(Math.round(q*100)/100)+(u?' '+u:'')}
+function groceries(){const m={};S.plan.forEach(d=>{const r=R(d.rid);if(!r)return;r.ingredients.forEach(i=>{let q=scaleQ(i,r,d.sv),u=i.u;if(u=='kg'){q*=1000;u='g'}if(u=='l'){q*=1000;u='ml'}const k=i.n+'|'+u;(m[k]=m[k]||{n:i.n,u,q:0,from:new Set(),cat:cat(i.n)});m[k].q+=q;m[k].from.add(r.name)})});return Object.entries(m).map(([k,v])=>({k,...v,from:[...v.from]}))}
+// ---------- UI ----------
+function render(){$('#nav').innerHTML=[['plan','Planner'],['recipes','Recipes'],['shop','Shopping'],['settings','Settings']].map(([k,t])=>`<button class="${V==k?'on':''}" onclick="V='${k}';COOK=EDIT=CONF=null;render()">${t}</button>`).join('');
+$('#app').innerHTML=COOK?cookView():EDIT?editView():{plan:planView,recipes:recipesView,shop:shopView,settings:settingsView}[V]();window.scrollTo(0,0);if(CONF)$('#app').insertAdjacentHTML('afterbegin',`<div role="alertdialog" class="warn" style="position:sticky;top:64px;z-index:9;border:2px solid var(--bad)">${esc(CONF.m)} ${CONF.ok?'<button class="b" onclick="CONF=null;render()">OK</button>':'<button class="b" onclick="const f=CONF.f;CONF=null;f()">Yes</button> <button class="g" onclick="CONF=null;render()">Cancel</button>'}</div>`)}
+function planView(){const ok=S.recipes.filter(safe);let h=`<h1>This week's dinners</h1><div class="row noprint" style="margin-bottom:12px"><button class="b" onclick="generate()">Generate plan</button><button class="g" onclick="ask('Clear the whole plan?',()=>{S.plan.forEach(d=>{d.rid=null;d.lock=false});S.warn='';save();render()})">Clear all</button></div>`;
+if(S.warn)h+=`<div class="warn">${esc(S.warn)}</div>`;
+if(!S.recipes.length)h+=`<div class="card">No recipes yet. Add some on the Recipes tab first.</div>`;
+h+='<div class="days">'+S.plan.map((d,i)=>{const r=R(d.rid);return`<div class="card day ${d.lock?'lk':''}"><h2>${DAYS[i]}</h2>`+
+(r?`<b>${esc(r.name)}</b><div class="mute">${r.prep}+${r.cook} min · ${r.ingredients.length} ingredients</div>`:'<div class="mute">Nothing planned</div>')+
+`<label for="s${i}">Recipe</label><select id="s${i}" onchange="S.plan[${i}].rid=this.value||null;save();render()"><option value="">— empty —</option>${ok.map(x=>`<option value="${x.id}" ${x.id==d.rid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`+
+`<label for="v${i}">Servings</label><input id="v${i}" type="number" min="1" max="30" value="${d.sv}" onchange="S.plan[${i}].sv=Math.max(1,+this.value||1);save();render()">`+
+`<div class="chk"><input type="checkbox" id="l${i}" ${d.lock?'checked':''} onchange="S.plan[${i}].lock=this.checked;save();render()"><label for="l${i}" style="margin:0">Keep this meal</label></div>`+
+`<div class="row noprint"><button class="g" onclick="generate(${i})" title="New suggestion for this day">↻</button>${i>0?`<button class="g" onclick="mv(${i},-1)" aria-label="Move earlier">◀</button>`:''}${i<6?`<button class="g" onclick="mv(${i},1)" aria-label="Move later">▶</button>`:''}${r?`<button class="b" onclick="COOK=${i};render()">Cook</button>`:''}</div></div>`}).join('')+'</div>';
+const w=S.plan.map(d=>{const r=R(d.rid);return r?r.prep+r.cook:0});const mx=Math.max(1,...w);
+h+=`<div class="card"><h2>Workload</h2>`+S.plan.map((d,i)=>`<div class="row" style="flex-wrap:nowrap"><span style="flex:0 0 40px">${DAYS[i]}</span><div style="flex:1"><div class="bar" style="width:${w[i]/mx*100}%"></div></div><span class="mute" style="flex:0 0 60px">${w[i]} min</span></div>`).join('')+'</div>';return h}
+function mv(i,d){const t=S.plan[i];S.plan[i]=S.plan[i+d];S.plan[i+d]=t;save();render()}
+function recipesView(){const f=FILTER.toLowerCase();const l=S.recipes.filter(r=>!f||(r.name+r.tags).toLowerCase().includes(f));
+return`<h1>Recipes</h1><div class="row noprint"><input aria-label="Search recipes" placeholder="Search by name or tag" value="${esc(FILTER)}" oninput="FILTER=this.value;render();document.querySelector('[aria-label=\\'Search recipes\\']').focus()"><button class="b" style="flex:0" onclick="EDIT={};render()">Add recipe</button>${S.recipes.some(r=>r.sample)?`<button class="g" style="flex:0;white-space:nowrap" onclick="ask('Remove all sample recipes?',()=>{S.recipes=S.recipes.filter(r=>!r.sample);S.plan.forEach(d=>{if(!R(d.rid))d.rid=null});save();render()})">Remove samples</button>`:''}</div><br>`+
+(l.length?`<div class="grid">`+l.map(r=>`<div class="card"><b>${esc(r.name)}</b> ${r.sample?'<span class="tag">sample</span>':''}${safe(r)?'':'<span class="tag" style="color:var(--bad)">needs review / allergen</span>'}<div class="mute">${r.prep+r.cook} min · serves ${r.servings}</div><div>${words(r.tags).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="row" style="margin-top:8px"><button class="g" onclick="fav('${r.id}')">${r.fav?'★ Favourite':'☆ Favourite'}</button><button class="g" onclick="EDIT=R('${r.id}');render()">Edit</button><button class="g d" onclick="del('${r.id}')">Delete</button></div></div>`).join('')+'</div>':'<div class="card">No recipes found. Add one to get started.</div>')}
+function fav(id){const r=R(id);r.fav=!r.fav;save();render()}
+function del(id){ask('Delete this recipe?',()=>{S.recipes=S.recipes.filter(r=>r.id!=id);S.plan.forEach(d=>{if(d.rid==id)d.rid=null});save();render()})}
+function editView(){const r=EDIT;return`<h1>${r.id?'Edit':'New'} recipe</h1><div class="card"><label for="f1">Name</label><input id="f1" value="${esc(r.name)}"><div class="row"><div><label for="f2">Serves</label><input id="f2" type="number" min="1" value="${r.servings||4}"></div><div><label for="f3">Prep (min)</label><input id="f3" type="number" min="0" value="${r.prep??10}"></div><div><label for="f4">Cook (min)</label><input id="f4" type="number" min="0" value="${r.cook??20}"></div></div>
+<label for="f5">Tags (comma separated, e.g. vegetarian, quick, family favourite)</label><input id="f5" value="${esc(r.tags)}">
+<label for="f6">Ingredients — one per line, like “200 g chicken breast” or “2 eggs”</label><textarea id="f6" rows="7">${esc((r.ingredients||[]).map(i=>[i.q||'',i.u,i.n].filter(x=>x!=='').join(' ')).join('\n'))}</textarea>
+<label for="f7">Steps — one per line</label><textarea id="f7" rows="6">${esc((r.steps||[]).join('\n'))}</textarea><p id="err" style="color:var(--bad)"></p>
+<button class="b" onclick="saveRecipe()">Save recipe</button> <button class="g" onclick="EDIT=null;render()">Cancel</button></div>`}
+function saveRecipe(){const g=i=>$('#f'+i).value,ing=g(6).split('\n').filter(x=>x.trim()).map(parseIng),name=g(1).trim();
+if(!name||!ing.length){$('#err').textContent='Please add a name and at least one ingredient.';return}
+if(!EDIT.id&&S.recipes.some(r=>r.name.toLowerCase()==name.toLowerCase())){$('#err').textContent='A recipe with this name already exists. Please use a different name.';return}
+const o={id:EDIT.id||uid(),name,servings:Math.max(1,+g(2)||1),prep:+g(3)||0,cook:+g(4)||0,tags:g(5),fav:!!EDIT.fav,sample:false,ingredients:ing,steps:g(7).split('\n').filter(x=>x.trim())};
+const i=S.recipes.findIndex(r=>r.id==o.id);i<0?S.recipes.push(o):S.recipes[i]=o;EDIT=null;save();render()}
+function cookView(){const d=S.plan[COOK],r=R(d.rid);return`<button class="g noprint" onclick="COOK=null;render()">← Back to plan</button><h1>${esc(r.name)}</h1><div class="mute">${r.prep} min prep · ${r.cook} min cooking · for ${d.sv}</div><div class="card"><h2>Ingredients</h2>`+r.ingredients.map(i=>`<label class="chk" style="font-weight:400;margin:0"><input type="checkbox" onchange="this.parentNode.classList.toggle('done',this.checked)"><span>${fmt(scaleQ(i,r,d.sv),i.u)} ${esc(i.n)}</span></label>`).join('')+`</div><div class="card"><h2>Method</h2><ol class="steps">`+r.steps.map(s=>`<li>${esc(s)}</li>`).join('')+'</ol></div>'}
+function shopView(){const g=groceries();if(!g.length)return`<h1>Shopping list</h1><div class="card">Nothing to buy yet. Generate a meal plan first.</div>`+extras();
+const by={};g.filter(x=>!S.pantry.includes(x.k)).forEach(x=>(by[x.cat]=by[x.cat]||[]).push(x));
+let h=`<h1>Shopping list</h1><button class="g noprint" onclick="window.print()">Print</button>`;
+Object.keys(by).sort().forEach(c=>{h+=`<div class="card"><h2>${c}</h2>`+by[c].map(x=>`<div class="chk ${S.ticked[x.k]?'done':''}"><input type="checkbox" id="${esc(x.k)}" ${S.ticked[x.k]?'checked':''} onchange="S.ticked['${esc(x.k).replace(/'/g,'')}']=this.checked;save();render()"><label for="${esc(x.k)}" style="margin:0;font-weight:400;flex:1"><span>${fmt(x.q,x.u)} ${esc(x.n)}</span><br><span class="mute">${esc(x.from.join(', '))}</span></label><button class="g noprint" onclick="S.pantry.push('${esc(x.k).replace(/'/g,'')}');save();render()">Have it</button></div>`).join('')+'</div>'});
+if(S.pantry.length)h+=`<div class="card noprint"><b>At home (excluded):</b> ${S.pantry.map(k=>`<span class="tag">${esc(k.split('|')[0])}</span>`).join('')} <button class="g" onclick="S.pantry=[];save();render()">Reset</button></div>`;return h+extras()}
+function extras(){return`<div class="card"><h2>Extra items</h2>`+S.extra.map((e,i)=>`<div class="chk"><span style="flex:1">${esc(e)}</span><button class="g d noprint" onclick="S.extra.splice(${i},1);save();render()">Remove</button></div>`).join('')+`<div class="row noprint"><input id="ex" aria-label="Extra item" placeholder="e.g. laundry liquid"><button class="b" style="flex:0" onclick="if($('#ex').value.trim()){S.extra.push($('#ex').value.trim());save();render()}">Add</button></div></div>`}
+function settingsView(){const s=S.settings;return`<h1>Settings</h1><div class="card"><label for="p">People to feed</label><input id="p" type="number" min="1" value="${s.people}">
+<label for="a">Allergies &amp; restrictions (comma separated — recipes containing these are never suggested)</label><input id="a" value="${esc(s.allergies)}" placeholder="e.g. peanut, shellfish">
+<label for="dl">Disliked ingredients</label><input id="dl" value="${esc(s.dislikes)}" placeholder="e.g. mushroom, olives">
+<label for="mt">Max total time per meal (minutes)</label><input id="mt" type="number" min="5" value="${s.maxTime}"><br>
+<button class="b" onclick="S.settings={people:Math.max(1,+$('#p').value||1),allergies:$('#a').value,dislikes:$('#dl').value,maxTime:+$('#mt').value||60};save();notice('Settings saved')">Save settings</button></div>
+<div class="card"><h2>Backup</h2><p class="mute">Copy this text somewhere safe to back up everything. To restore, paste a backup below and press Restore.</p><textarea id="bk" rows="5" aria-label="Backup data">${esc(JSON.stringify(S))}</textarea><br><br><button class="b" onclick="try{const d=JSON.parse($('#bk').value);if(!d.recipes)throw 0;ask('Replace all current data?',()=>{S=d;save();render()})}catch(e){notice('That does not look like a valid backup.')}">Restore from text</button></div>`}
+render();
+</script></body></html>
